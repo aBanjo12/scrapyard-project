@@ -3,12 +3,7 @@ import subprocess
 import platform
 import socket
 import tkinter as tk
-from tkinter import *
 import re
-
-guess_count = 10
-guessed_chars = []
-file_path = ""
 
 def is_windows():
     return platform.system() == "Windows"
@@ -27,31 +22,39 @@ def launch_deleter():
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
 
+guessed_chars = []
+file_name = ""
+
+# def render():
+
+
+
 def build_ui(file_name):
     root = tk.Tk()
-    
+
     def key_down(event):
         key = event.keysym.lower()
         if len(key) == 1 and 'a' <= key <= 'z':
+            # check if already included
             guessed_chars.append(key)
-    
+
     keyboard = [
         "qwertyuiop",
         "asdfghjkl",
         "zxcvbnm"
     ]
-    
+
     letter_elements = {}
-    
+
     # keyboard (colors for debug)
     for row in keyboard:
-        outer_frame = tk.Frame(root, bg="blue")
-        outer_frame.pack(fill="x", pady=5)
-        row_frame = tk.Frame(outer_frame, bg="red")
-        row_frame.pack(pady=5)
+        outer_frame = tk.Frame(root)
+        outer_frame.pack(fill="x")
+        row_frame = tk.Frame(outer_frame)
+        row_frame.pack()
         for letter in row:
-            label = tk.Label(row_frame, text=letter)
-            label.pack(side="left", padx=5, pady=5)
+            label = tk.Label(row_frame, text=letter, fg="red")
+            label.pack(side="left", padx=10, pady=5)
             letter_elements[letter] = label
 
     # Center the frame within the root window
@@ -84,7 +87,7 @@ def main():
     print(file_name)
     build_ui(file_name)
     #print("hang.py recieved " + data)
-    
+
 
 if __name__ == "__main__":
     main()
