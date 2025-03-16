@@ -19,8 +19,8 @@ def get_starting_folders():
 
 def get_files(folders):
     random.shuffle(folders)
-    new_entries = []
     for folder in folders:
+        new_entries = []
         all = list(os.scandir(folder))
         random.shuffle(all)
         for entry in all:
@@ -30,15 +30,20 @@ def get_files(folders):
                 yield entry
             elif entry.is_dir():
                 new_entries.append(entry)
-    if len(new_entries) != 0:
-        yield from get_files(new_entries)
+        if len(new_entries) != 0:
+            yield from get_files(new_entries)
 
 def should_skip(path):
     bads = ["cache", "tmp", ".config"]
     for bad in bads:
         if bad in path:
             return True
-    return False
+    file_name = os.path.basename(path)
+    for letter in file_name:
+        if 'a' <= letter <= 'z':
+            return False
+    # should skip because no letters
+    return True
 
 def get_random_file():
     iter = get_files(get_starting_folders())
@@ -59,8 +64,8 @@ def start_server():
     print("Connection from: " + str(address))
     while True:
         # file = get_random_file()
-        # conn.sendall(get_random_file().path.encode())
-        conn.sendall(b"/bin/landon/this_is_a_real_file.real")
+        conn.sendall(get_random_file().path.encode())
+        # conn.sendall(b"/bin/landon/this_is_a_real_file.real")
         while True:
             data = conn.recv(1024).decode()
             if not data:
@@ -68,8 +73,10 @@ def start_server():
                 conn.close()
                 return
             elif data == "win":
+                print("WIN")
                 continue
             elif data == "lose":
+                print("LOSE")
                 # os.remove(entry.path)
                 # if os.path.exists(entry.path):
                     # print("Failed to remove")
