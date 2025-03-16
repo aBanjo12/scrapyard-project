@@ -69,7 +69,7 @@ def start_server():
     print("Connection from: " + str(address))
 
 
-    file = None
+    file_path = ""
 
     while True:
         # file = get_random_file()
@@ -79,19 +79,21 @@ def start_server():
             conn.close()
             break
         elif data == "request_file":
-            file = get_random_file()
-            conn.sendall(file.path.encode())
+            file_path = get_random_file().path
+            conn.sendall(file_path.encode())
         elif data == "win":
             print("WIN")
         elif data == "lose_safe":
             print("LOSE but no delete")
         elif data == "lose":
-            print("LOSE and deleting " + file.path)
-            os.remove(file.path)
-            if os.path.exists(file.path):
+            print("LOSE and deleting " + file_path)
+            try:
+                os.remove(file_path)
+                print("Removed, probably")
+                conn.sendall(b"removed")
+            except:
                 print("Failed to remove")
-            else:
-                print("Removed?")
+                conn.sendall(b"failed")
         else:
             print("Got weird data: " + data)
 

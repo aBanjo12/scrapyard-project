@@ -142,7 +142,7 @@ def render():
                 censored += "☐"
             else:
                 censored += letter
-    
+
 
     file_label.config(text=censored)
 
@@ -150,9 +150,10 @@ def render():
         name="party"
     else:
         name=str(guesses_left)
+
+    global dino_image # stop it from being garbage collected
     dino_image = tk.PhotoImage(file=path()+"/dino/"+name+".png")
-    root.img=dino_image
-    image_label.config(image=root.img)
+    image_label.config(image=dino_image)
     guesses_left_label.config(text="Hearts: " + str(guesses_left))
 
     if won():
@@ -171,9 +172,12 @@ def render():
         orph_label = tk.Label(text=random.choice(lose_message_list), font=("Arial", 20), bg="white")
         orph_label.pack(pady=30)
 
-
         if fun_mode:
-            text = "Feleted " + file_path
+            status = conn.recv(1024).decode()
+            if status == "removed":
+                text = "Deleted " + file_path
+            else:
+                text = "Couldn't delete this file, oops"
         else:
             text = "Didn't actually delete the file"
 
