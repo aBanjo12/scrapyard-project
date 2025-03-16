@@ -10,7 +10,7 @@ def get_starting_folders():
     if is_windows():
         names = ['/Program Files', '/Program Files (x86)', '/Users', '/Windows', '/ProgramData']
     else:
-        names =  ['/bin', '/boot', '/dev', '/etc', '/home', '/lib', '/lib64', '/proc', '/sbin', '/sys', '/usr', '/var']
+        names = ['/bin', '/boot', '/dev', '/etc', '/home', '/lib', '/lib64', '/proc', '/sbin', '/sys', '/usr', '/var']
     entries = []
     for entry in os.scandir("/"):
         if entry.path in names:
@@ -20,8 +20,11 @@ def get_starting_folders():
 def get_files(folders):
     random.shuffle(folders)
     for folder in folders:
-        new_entries = []
-        all = list(os.scandir(folder))
+        new_folders = []
+        try:
+            all = list(os.scandir(folder))
+        except:
+            continue
         random.shuffle(all)
         for entry in all:
             if entry.is_symlink():
@@ -29,9 +32,9 @@ def get_files(folders):
             elif entry.is_file():
                 yield entry
             elif entry.is_dir():
-                new_entries.append(entry)
-        if len(new_entries) != 0:
-            yield from get_files(new_entries)
+                new_folders.append(entry)
+        if len(new_folders) != 0:
+            yield from get_files(new_folders)
 
 def should_skip(path):
     bads = ["cache", "tmp", ".config"]
