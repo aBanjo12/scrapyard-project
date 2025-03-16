@@ -4,22 +4,22 @@ import platform
 import socket
 import tkinter as tk
 
+def path():
+    return os.path.dirname(os.path.realpath(__file__))
+
 def is_windows():
     return platform.system() == "Windows"
 
-def launch_deleter():
-    path = os.path.dirname(os.path.realpath(__file__)) + "/deleter.py"
+def launch_deleter(admin = False):
+    deleter_path = path() + "/deleter.py"
     if is_windows():
-        subprocess.Popen(
-            ["powershell", "Start-Process", "python", "-ArgumentList", "'" + path + "'", "-Verb", "RunAs"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        subprocess.Popen(["powershell", "Start-Process", "python", "-ArgumentList", "'" + deleter_path + "'", "-Verb", "RunAs"])
     else:
-        subprocess.Popen(
-            [ # "pkexec",
-                "python3", path],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        if admin:
+            subprocess.Popen(["pkexec", "python3", deleter_path])
+        else:
+            subprocess.Popen(["python3", deleter_path])
+            
 
 # i hope you like globals
 def new_game():
@@ -46,14 +46,19 @@ def new_game():
 def make_frames_and_keyboard():
     global dir_frame
     global file_frame
+    global image_frame
     global guesses_left_frame
+
+    dino_image = tk.PhotoImage(file="dino/0.png")
 
     dir_frame = tk.Label(root, text=file_dir, font=("Consolas", 15), fg="gray")
     file_frame = tk.Label(root, font=("Consolas", 30))
+    image_frame = tk.Label(root, image=dino_image)
     guesses_left_frame = tk.Label(root, font=("Arial", 20))
 
     dir_frame.pack()
     file_frame.pack()
+    image_frame.pack()
     guesses_left_frame.pack()
 
     keyboard = [
@@ -85,13 +90,18 @@ def render():
     file_frame.config(text=censored)
 
     # also render image here
+    
     guesses_left_frame.config(text="Hearts: " + str(guesses_left))
 
     if won():
-        conn.sendall(b"won")
+        conn.sendall(b"win")
+        label = tk.Label(root, text="testing win")
+        label.pack()
         new_game()
     elif lost():
-        conn.sendall(b"lost")
+        conn.sendall(b"lose")
+        label = tk.Label(root, text="testing win")
+        label.pack()
         new_game()
 
 def lost():
