@@ -40,10 +40,10 @@ def new_game():
     for widget in root.winfo_children():
         widget.destroy()
 
-    make_boxes_and_keyboard()
+    make_frames_and_keyboard()
     render()
 
-def make_boxes_and_keyboard():
+def make_frames_and_keyboard():
     global dir_frame
     global file_frame
     global guesses_left_frame
