@@ -39,9 +39,11 @@ def get_files(folders):
 def should_skip(path):
     bads = ["cache", "tmp", ".config", "debug"]
     for bad in bads:
-        if bad in path:
+        if bad in path.lower():
             return True
     file_name = os.path.basename(path)
+    if len(file_name) > 30:
+        return True
     for letter in file_name:
         if 'a' <= letter <= 'z':
             return False
@@ -68,21 +70,26 @@ def start_server():
 
     while True:
         # file = get_random_file()
-        conn.sendall(get_random_file().path.encode())
-        # conn.sendall(b"/bin/landon/this_is_a_real_file.real")
         data = conn.recv(1024).decode()
         if not data:
             # client closed it
             conn.close()
             break
+        elif data == "request_file":
+            conn.sendall(get_random_file().path.encode())
         elif data == "win":
             print("WIN")
+        elif data == "lose_safe":
+            print("LOSE but no delete")
         elif data == "lose":
-            print("LOSE")
+            print("LOSE and deleting")
             # os.remove(entry.path)
             # if os.path.exists(entry.path):
                 # print("Failed to remove")
         else:
-            print("Weird!")
+            print("Got weird data: " + data)
+            
+    conn.close()
+    print("Server closed!")
 
 start_server()

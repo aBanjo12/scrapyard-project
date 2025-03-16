@@ -3,6 +3,7 @@ import subprocess
 import platform
 import socket
 import tkinter as tk
+import time
 
 def path():
     return os.path.dirname(os.path.realpath(__file__))
@@ -10,16 +11,50 @@ def path():
 def is_windows():
     return platform.system() == "Windows"
 
-def launch_deleter(admin = False):
+def launch_deleter():
     deleter_path = path() + "/deleter.py"
     if is_windows():
+        # todo: normal thing for windows
         subprocess.Popen(["powershell", "Start-Process", "python", "-ArgumentList", "'" + deleter_path + "'", "-Verb", "RunAs"])
     else:
-        if admin:
+        if fun_mode:
             subprocess.Popen(["pkexec", "python3", deleter_path])
         else:
             subprocess.Popen(["python3", deleter_path])
-            
+
+# todo update
+lose_taunt_list = ["lmao noob"]
+win_message_list = ["you win!"]
+green = "#6ed420"
+red = "#d64040"
+
+def start_app():
+    global conn
+    global fun_mode
+    
+    tk.Label(root, text="Play fun mode?", bg="white")
+    tk.Label(root, text="Fun mode means that your ", bg="white")
+    # ask for fun mode
+    
+    fun_mode = False
+    
+    launch_deleter()
+
+    start = time.time()
+    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    while True:
+        try:
+            conn.connect(('localhost', 25567))
+            break
+        except:
+            if time.time() - start > 5:
+                raise Exception("Couldn't connect to socket")
+
+    print("Connected")
+    # after connected:
+    root.bind("<KeyPress>", lambda e: on_key_down(e.keysym.lower()))
+    
+    new_game()
 
 # i hope you like globals
 def new_game():
@@ -30,7 +65,8 @@ def new_game():
     global file_dir
     global file_name
 
-    file_path = conn.recv(1024).decode()
+    conn.sendall(b"request_file")
+    file_path = conn.recv(1024).decode().replace("\\", "/")
     file_dir = os.path.dirname(file_path) + "/"
     file_name = os.path.basename(file_path)
     keyboard_labels = {}
@@ -44,22 +80,20 @@ def new_game():
     render()
 
 def make_frames_and_keyboard():
-    global dir_frame
-    global file_frame
-    global image_frame
-    global guesses_left_frame
+    global dir_label
+    global file_label
+    global image_label
+    global guesses_left_label
 
-    dino_image = tk.PhotoImage(file="dino/0.png")
+    dir_label = tk.Label(root, text=file_dir, font=("Consolas", 15), fg="gray", bg="white")
+    file_label = tk.Label(root, font=("Consolas", 30), bg="white")
+    image_label = tk.Label(root, bg="white")
+    guesses_left_label = tk.Label(root, font=("Arial", 20), bg="white")
 
-    dir_frame = tk.Label(root, text=file_dir, font=("Consolas", 15), fg="gray")
-    file_frame = tk.Label(root, font=("Consolas", 30))
-    image_frame = tk.Label(root, image=dino_image)
-    guesses_left_frame = tk.Label(root, font=("Arial", 20))
-
-    dir_frame.pack()
-    file_frame.pack()
-    image_frame.pack()
-    guesses_left_frame.pack()
+    dir_label.pack()
+    file_label.pack()
+    image_label.pack()
+    guesses_left_label.pack()
 
     keyboard = [
         "qwertyuiop",
@@ -68,9 +102,9 @@ def make_frames_and_keyboard():
     ]
 
     for row in keyboard:
-        outer_frame = tk.Frame(root)
+        outer_frame = tk.Frame(root, bg="white")
         outer_frame.pack(fill="x")
-        row_frame = tk.Frame(outer_frame)
+        row_frame = tk.Frame(outer_frame, bg="white")
         row_frame.pack()
         for letter in row:
             label = tk.Label(row_frame, text=letter, font=("Arial", 15), width=3, fg="black", padx=5, pady=5, cursor="hand2")
@@ -80,29 +114,48 @@ def make_frames_and_keyboard():
             keyboard_labels[letter] = label
 
 def render():
-    censored = ""
-    for letter in file_name:
-        lower = letter.lower()
-        if 'a' <= lower <= 'z' and lower not in guessed_letters:
-            censored += "☐"
-        else:
-            censored += letter
-    file_frame.config(text=censored)
-
-    # also render image here
+    if won() or lost():
+        censored = file_name
+    else:
+        censored = ""
+        for letter in file_name:
+            lower = letter.lower()
+            if 'a' <= lower <= 'z' and lower not in guessed_letters:
+                censored += "☐"
+            else:
+                censored += letter
     
-    guesses_left_frame.config(text="Hearts: " + str(guesses_left))
+    file_label.config(text=censored)
+
+    if won():
+        name="party"
+    else:
+        name=str(guesses_left)
+    dino_image = tk.PhotoImage(file=path()+"/dino/"+name+".png")
+    root.img=dino_image
+    image_label.config(image=root.img)
+    guesses_left_label.config(text="Hearts: " + str(guesses_left))
 
     if won():
         conn.sendall(b"win")
-        label = tk.Label(root, text="testing win")
-        label.pack()
-        new_game()
+        label = tk.Button(root, text="New game", command=new_game)
+        label.pack(pady=10)
+        orph_label = tk.Label(text="You saved Orpheous! :)", font=("Arial", 20), bg="white")
+        orph_label.pack(pady=10)
+
+
     elif lost():
-        conn.sendall(b"lose")
-        label = tk.Label(root, text="testing win")
-        label.pack()
-        new_game()
+        if fun_mode:
+            conn.sendall(b"lose")
+        else:
+            conn.sendall(b"lose_safe")
+            
+        orph_label = tk.Label(text="You killed Orpheous :(", font=("Arial", 20), bg="white")
+        orph_label.pack(pady=10)
+        deleting_file_label = tk.Label(root, text="deleted " + file_path, fg=red, bg="white", font=("Arial", 20))
+        deleting_file_label.pack()
+        label = tk.Button(root, text="New game", command=new_game)
+        label.pack(pady=10)
 
 def lost():
     return guesses_left <= 0
@@ -115,6 +168,9 @@ def won():
     return True
 
 def on_key_down(key):
+    if won() or lost():
+        return
+
     # check if already included
     if len(key) != 1 or key < 'a' or key > 'z' or key in guessed_letters:
         return
@@ -122,30 +178,18 @@ def on_key_down(key):
     guessed_letters.append(key)
 
     if key in file_name.lower():
-        color = "#6ed420" # green
+        color = green
     else:
         global guesses_left
         guesses_left -= 1
-        color = "#d64040" # red
+        color = red
 
     keyboard_labels[key].config(bg=color, cursor="arrow")
     render()
 
-launch_deleter()
-
-conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-while True:
-    try:
-        conn.connect(('localhost', 25567))
-        break
-    except:
-        pass
-
-print("Connected")
-
 root = tk.Tk()
 root.title("HangManager")
 root.geometry("1920x1080")
-new_game()
-root.bind("<KeyPress>", lambda e: on_key_down(e.keysym.lower()))
+root.configure(bg="white")
+start_app()
 root.mainloop()
