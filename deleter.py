@@ -37,7 +37,7 @@ def get_files(folders):
             yield from get_files(new_folders)
 
 def should_skip(path):
-    bads = ["cache", "tmp", ".config"]
+    bads = ["cache", "tmp", ".config", "debug"]
     for bad in bads:
         if bad in path:
             return True
@@ -65,26 +65,24 @@ def start_server():
 
     conn, address = server_socket.accept()
     print("Connection from: " + str(address))
+
     while True:
         # file = get_random_file()
         conn.sendall(get_random_file().path.encode())
         # conn.sendall(b"/bin/landon/this_is_a_real_file.real")
-        while True:
-            data = conn.recv(1024).decode()
-            if not data:
-                # client closed it
-                conn.close()
-                return
-            elif data == "win":
-                print("WIN")
-                continue
-            elif data == "lose":
-                print("LOSE")
-                # os.remove(entry.path)
-                # if os.path.exists(entry.path):
-                    # print("Failed to remove")
-                pass
-            else:
-                print("Weird!")
+        data = conn.recv(1024).decode()
+        if not data:
+            # client closed it
+            conn.close()
+            break
+        elif data == "win":
+            print("WIN")
+        elif data == "lose":
+            print("LOSE")
+            # os.remove(entry.path)
+            # if os.path.exists(entry.path):
+                # print("Failed to remove")
+        else:
+            print("Weird!")
 
 start_server()

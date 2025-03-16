@@ -1,0 +1,5 @@
+ - loss screen/messages (show correct answer if you lose)
+ - win screen/messages
+ - images of dino
+ - restart button
+ - disclaimer at bottom
