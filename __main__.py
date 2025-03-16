@@ -4,6 +4,7 @@ import platform
 import socket
 import tkinter as tk
 import time
+import random
 
 def path():
     return os.path.dirname(os.path.realpath(__file__))
@@ -13,48 +14,65 @@ def is_windows():
 
 def launch_deleter():
     deleter_path = path() + "/deleter.py"
-    if is_windows():
-        # todo: normal thing for windows
-        subprocess.Popen(["powershell", "Start-Process", "python", "-ArgumentList", "'" + deleter_path + "'", "-Verb", "RunAs"])
-    else:
-        if fun_mode:
-            subprocess.Popen(["pkexec", "python3", deleter_path])
+    try:
+        if is_windows():
+            # todo: normal thing for windows
+            subprocess.Popen(["powershell", "Start-Process", "python", "-ArgumentList", "'" + deleter_path + "'", "-Verb", "RunAs"])
         else:
-            subprocess.Popen(["python3", deleter_path])
+            if fun_mode:
+                subprocess.Popen(["pkexec", "python3", deleter_path])
+            else:
+                subprocess.Popen(["python3", deleter_path])
+    except Exception as e:
+        print("Failed to launch server:")
+        print(e)
 
-# todo update
-lose_taunt_list = ["lmao noob"]
-win_message_list = ["you win!"]
+lose_message_list = ["You killed Orpheous :(", "Guess you didn't need it anyway!", "Say goodbye to your file!"]
+win_message_list = ["You saved Orpheous :)", "Your file lives... for now", "Nice job, computer expert!"]
 green = "#6ed420"
 red = "#d64040"
 
 def start_app():
-    global conn
-    global fun_mode
-    
-    tk.Label(root, text="Play fun mode?", bg="white")
-    tk.Label(root, text="Fun mode means that your ", bg="white")
+    def choose_fun(selection):
+        global fun_mode
+        global conn
+
+        fun_mode = selection
+        launch_deleter()
+
+        start = time.time()
+        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        while True:
+            try:
+                conn.connect(('localhost', 25567))
+                break
+            except:
+                if time.time() - start > 2:
+                    raise Exception("Couldn't connect to socket")
+
+        print("Client connected")
+        # after connected:
+        root.bind("<KeyPress>", lambda e: on_key_down(e.keysym.lower()))
+
+        new_game()
+
+    tk.Label(root, text="Welcome to HangManager!", font=("Arial", 25), bg="white").pack(pady=50)
+
+    def paragraph(text):
+        tk.Label(root, text=text, font=("Arial", 12), wraplength=1000, bg="white").pack(pady=15)
+
+    paragraph("A file on your computer will be chosen at random.")
+    paragraph("It's just like Hangman, but instead of guessing an English phrase, you need to guess the name of the file. You'll enter letters that you think it contains. If you enter ten bad letters, you lose.")
+    paragraph("Fun mode means that if you fail to guess a file, it'll be deleted from your computer. Play at your own risk!")
+
+    outer_frame = tk.Frame(root, bg="white")
+    outer_frame.pack(fill="x")
+    row_frame = tk.Frame(outer_frame, bg="white")
+    row_frame.pack(pady=30)
+
+    tk.Button(row_frame, text="Safe mode", command=lambda: choose_fun(False)).pack(side="left", padx=5, pady=5)
+    tk.Button(row_frame, text="Fun mode", command=lambda: choose_fun(True)).pack(side="left", padx=5, pady=5)
     # ask for fun mode
-    
-    fun_mode = False
-    
-    launch_deleter()
-
-    start = time.time()
-    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    while True:
-        try:
-            conn.connect(('localhost', 25567))
-            break
-        except:
-            if time.time() - start > 5:
-                raise Exception("Couldn't connect to socket")
-
-    print("Connected")
-    # after connected:
-    root.bind("<KeyPress>", lambda e: on_key_down(e.keysym.lower()))
-    
-    new_game()
 
 # i hope you like globals
 def new_game():
@@ -85,7 +103,7 @@ def make_frames_and_keyboard():
     global image_label
     global guesses_left_label
 
-    dir_label = tk.Label(root, text=file_dir, font=("Consolas", 15), fg="gray", bg="white")
+    dir_label = tk.Label(root, text=file_dir, font=("Consolas", 15), wraplength=1000, fg="gray", bg="white")
     file_label = tk.Label(root, font=("Consolas", 30), bg="white")
     image_label = tk.Label(root, bg="white")
     guesses_left_label = tk.Label(root, font=("Arial", 20), bg="white")
@@ -125,6 +143,7 @@ def render():
             else:
                 censored += letter
     
+
     file_label.config(text=censored)
 
     if won():
@@ -138,24 +157,34 @@ def render():
 
     if won():
         conn.sendall(b"win")
-        label = tk.Button(root, text="New game", command=new_game)
-        label.pack(pady=10)
-        orph_label = tk.Label(text="You saved Orpheous! :)", font=("Arial", 20), bg="white")
-        orph_label.pack(pady=10)
 
-
+        file_label.config(fg=green)
+        orph_label = tk.Label(text=random.choice(win_message_list), font=("Arial", 20), bg="white")
+        orph_label.pack(pady=30)
     elif lost():
         if fun_mode:
             conn.sendall(b"lose")
         else:
             conn.sendall(b"lose_safe")
-            
-        orph_label = tk.Label(text="You killed Orpheous :(", font=("Arial", 20), bg="white")
-        orph_label.pack(pady=10)
-        deleting_file_label = tk.Label(root, text="deleted " + file_path, fg=red, bg="white", font=("Arial", 20))
+
+        file_label.config(fg=red)
+        orph_label = tk.Label(text=random.choice(lose_message_list), font=("Arial", 20), bg="white")
+        orph_label.pack(pady=30)
+
+
+        if fun_mode:
+            text = "Feleted " + file_path
+        else:
+            text = "Didn't actually delete the file"
+
+        deleting_file_label = tk.Label(root, text=text, fg=red, font=("Arial", 15), wraplength=1000, bg="white")
         deleting_file_label.pack()
-        label = tk.Button(root, text="New game", command=new_game)
-        label.pack(pady=10)
+    else:
+        return
+
+    # if won or lost:
+    label = tk.Button(root, text="New game", command=new_game, font=("Arial", 15), padx=10, pady=5)
+    label.pack(pady=15)
 
 def lost():
     return guesses_left <= 0
