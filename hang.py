@@ -22,72 +22,66 @@ def launch_deleter():
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
 
-guessed_chars = []
-file_name = ""
+launch_deleter()
 
-# def render():
+conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+while True:
+    try:
+        conn.connect(('localhost', 25567))
+        break
+    except:
+        pass
 
+print("Connected")
 
-
-def build_ui(file_name):
+def new_game():
     root = tk.Tk()
+    root.title("HangManager")
+    root.attributes("-fullscreen", True)
+    root.geometry("1920x1080")
+    
+    file_path = conn.recv(1024).decode()
+    file_dir = os.path.dirname(file_path)
+    file_name = os.path.basename(file_path)
+    # for widget in root.winfo_children():
+    #     widget.destroy()
 
-    def key_down(event):
-        key = event.keysym.lower()
-        if len(key) == 1 and 'a' <= key <= 'z':
-            # check if already included
-            guessed_chars.append(key)
+    dir_frame = tk.Label(root, text=file_dir, font=("Arial", 15), fg="gray")
+    dir_frame.pack()
+
+    file_frame = tk.Label(root, text=file_name, font=("Arial", 25))
+    file_frame.pack()
 
     keyboard = [
         "qwertyuiop",
         "asdfghjkl",
         "zxcvbnm"
     ]
-
-    letter_elements = {}
-
-    # keyboard (colors for debug)
+    
+    keyboard_labels = {}
+    guessed_letters = []
+    
     for row in keyboard:
         outer_frame = tk.Frame(root)
         outer_frame.pack(fill="x")
         row_frame = tk.Frame(outer_frame)
         row_frame.pack()
         for letter in row:
-            label = tk.Label(row_frame, text=letter, fg="red")
+            label = tk.Label(row_frame, text=letter, font=("Arial", 15), fg="black")
             label.pack(side="left", padx=10, pady=5)
-            letter_elements[letter] = label
-
-    # Center the frame within the root window
-    # frame.grid_columnconfigure(0, weight=1)
-    # frame.grid_columnconfigure(1, weight=1)
-    # frame.grid_columnconfigure(2, weight=1)
-
-    # l = Label(root, textvariable = current)
-    # l.pack()
-
-    root.title("Game Name Here")
-    # label = tk.Label(root, text=file_name, font=("Arial", 14))
-    # label.pack(pady=20)
-    root.bind("<KeyPress>", key_down)
+            keyboard_labels[letter] = label
+            
+    def key_down(event):
+        key = event.keysym.lower()
+        if len(key) == 1 and 'a' <= key <= 'z':
+            # check if already included
+            if key not in guessed_letters:
+                guessed_letters.append(key)
+                color = "green" if key in file_name else "red"
+                keyboard_labels[key].config(fg=color)
+      
+    root.bind("<KeyPress>", key_down)          
     root.mainloop()
 
+new_game()
 
-def main():
-    launch_deleter()
-    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    while True:
-        try:
-            conn.connect(('localhost', 25567))
-            break
-        except:
-            pass
-    print("Connected")
-    file_path = conn.recv(1024).decode()
-    file_name = os.path.basename(file_path)
-    print(file_name)
-    build_ui(file_name)
-    #print("hang.py recieved " + data)
-
-
-if __name__ == "__main__":
-    main()
