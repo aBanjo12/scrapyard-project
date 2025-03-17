@@ -10,7 +10,7 @@ def get_starting_folders():
     if is_windows():
         names = ['/Program Files', '/Program Files (x86)', '/Users', '/Windows', '/ProgramData']
     else:
-        names = ['/bin', '/boot', '/dev', '/etc', '/home', '/lib', '/lib64', '/proc', '/sbin', '/sys', '/usr', '/var']
+        names = ['/bin', '/dev', '/etc', '/home', '/lib', '/lib64', '/proc', '/sbin', '/usr', '/var']
     entries = []
     for entry in os.scandir("/"):
         if entry.path in names:

@@ -1,6 +1,0 @@
- - loss screen/messages (show correct answer if you lose)
- - win screen/messages
- - images of dino
- - restart button
- - mode picker (delete files or not)
- - disclaimer at bottom
