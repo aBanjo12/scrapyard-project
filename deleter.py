@@ -52,12 +52,12 @@ def should_skip(path):
 
 def get_random_file():
     iter = get_files(get_starting_folders())
-    first_50 = []
-    while len(first_50) < 50:
+    sample = []
+    while len(sample) < 500:
         file = next(iter)
         if not should_skip(file.path):
-            first_50.append(file)
-    return random.choice(first_50)
+            sample.append(file)
+    return random.choice(sample)
 
 def start_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

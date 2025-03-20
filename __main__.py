@@ -16,8 +16,10 @@ def launch_deleter():
     deleter_path = path() + "/deleter.py"
     try:
         if is_windows():
-            # todo: normal thing for windows
-            subprocess.Popen(["powershell", "Start-Process", "python", "-ArgumentList", "'" + deleter_path + "'", "-Verb", "RunAs"])
+            if fun_mode:
+                subprocess.Popen(["powershell", "Start-Process", "python", "-ArgumentList", "'" + deleter_path + "'", "-Verb", "RunAs"])
+            else:
+                subprocess.Popen(["python3", deleter_path])
         else:
             if fun_mode:
                 subprocess.Popen(["pkexec", "python3", deleter_path])
